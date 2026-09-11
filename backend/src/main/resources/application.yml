@@ -41,7 +41,7 @@ securex:
   storage:
     path: ${FILE_STORAGE_PATH:./uploads}
   public-base-url: ${PUBLIC_BASE_URL:${RENDER_EXTERNAL_URL:${PUBLIC_URL:${APP_BASE_URL:}}}}
-  frontend-url: ${FRONTEND_URL:${PUBLIC_BASE_URL:${PUBLIC_URL:${APP_BASE_URL:}}}}
+  frontend-url: ${FRONTEND_URL:${PUBLIC_BASE_URL:${RENDER_EXTERNAL_URL:${PUBLIC_URL:${APP_BASE_URL:}}}}}
 
 springdoc:
   api-docs:
