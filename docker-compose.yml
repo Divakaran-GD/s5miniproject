@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: securex-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-securex_db}
+      POSTGRES_USER: ${DB_USERNAME:-securex_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-securex_secret_password_change_me}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-securex_user} -d ${DB_NAME:-securex_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: securex-backend
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - DB_URL=jdbc:postgresql://postgres:5432/${DB_NAME:-securex_db}
+      - DB_USERNAME=${DB_USERNAME:-securex_user}
+      - DB_PASSWORD=${DB_PASSWORD:-securex_secret_password_change_me}
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - FILE_STORAGE_PATH=/app/uploads
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - backend_uploads:/app/uploads
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: securex-frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_uploads:

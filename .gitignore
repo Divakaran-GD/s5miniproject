@@ -1,0 +1,11 @@
+# Ignore builds, logs, and sensitive data
+target/
+dist/
+node_modules/
+.env
+uploads/
+*.log
+.DS_Store
+.idea/
+*.iml
+.vscode/
