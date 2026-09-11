@@ -51,6 +51,8 @@ export interface ShareLink {
   downloadCount: number;
   passwordProtected: boolean;
   recipientEmail?: string;
+  emailSent?: boolean;
+  emailStatusMessage?: string;
   revoked: boolean;
   expired: boolean;
   createdAt: string;

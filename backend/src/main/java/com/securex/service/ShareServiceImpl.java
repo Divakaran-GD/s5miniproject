@@ -21,10 +21,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ShareServiceImpl implements ShareService {
@@ -35,6 +38,7 @@ public class ShareServiceImpl implements ShareService {
     private final FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final EmailService emailService;
 
     @Value("${securex.public-base-url:}")
     private String publicBaseUrlConfig;
@@ -90,6 +94,25 @@ public class ShareServiceImpl implements ShareService {
         dto.setRawToken(rawToken);
         String baseUrl = getEffectiveBaseUrl(httpRequest);
         dto.setShareUrl(baseUrl + "/share/" + rawToken);
+
+        if (shareLink.getRecipientEmail() != null && !shareLink.getRecipientEmail().isBlank()) {
+            try {
+                emailService.sendShareLinkEmail(
+                        shareLink.getRecipientEmail(),
+                        file.getOriginalFilename(),
+                        dto.getShareUrl(),
+                        expiresAt,
+                        request.getMaxDownloads()
+                );
+                dto.setEmailSent(true);
+                dto.setEmailStatusMessage("Share link generated and sent successfully to " + shareLink.getRecipientEmail() + ".");
+            } catch (Exception e) {
+                log.warn("Share link created, but failed to send email to {}: {}", shareLink.getRecipientEmail(), e.getMessage());
+                dto.setEmailSent(false);
+                dto.setEmailStatusMessage("Share link generated successfully, but the email could not be sent.");
+            }
+        }
+
         return dto;
     }
 

@@ -23,6 +23,8 @@ public class ShareLinkDto {
     private Integer downloadCount;
     private boolean passwordProtected;
     private String recipientEmail;
+    private Boolean emailSent;
+    private String emailStatusMessage;
     private boolean revoked;
     private boolean expired;
     private LocalDateTime createdAt;

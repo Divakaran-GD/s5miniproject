@@ -17,7 +17,14 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({ file, isOpen
   const [password, setPassword] = useState<string>('');
   const [recipientEmail, setRecipientEmail] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [createdShare, setCreatedShare] = useState<{ shareUrl: string; passkey: string; expiresAt: string } | null>(null);
+  const [createdShare, setCreatedShare] = useState<{
+    shareUrl: string;
+    passkey: string;
+    expiresAt: string;
+    emailSent?: boolean;
+    emailStatusMessage?: string;
+    recipientEmail?: string;
+  } | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
   const [copiedKey, setCopiedKey] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +70,9 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({ file, isOpen
         shareUrl,
         passkey: savedKey,
         expiresAt: new Date(shareData.expiresAt).toLocaleString(),
+        emailSent: shareData.emailSent,
+        emailStatusMessage: shareData.emailStatusMessage,
+        recipientEmail: shareData.recipientEmail || recipientEmail.trim(),
       });
 
       if (onSuccess) onSuccess();
@@ -134,6 +144,24 @@ export const CreateShareModal: React.FC<CreateShareModalProps> = ({ file, isOpen
                 <h4 className="font-bold text-slate-100">Secure Link Generated</h4>
                 <p className="text-xs text-slate-400">Recipient can view metadata and download encrypted blob</p>
               </div>
+
+              {createdShare.recipientEmail && (
+                <div
+                  className={`p-3 rounded-lg border text-xs flex items-center space-x-2 ${
+                    createdShare.emailSent === false
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                      : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                  }`}
+                >
+                  <Mail className="w-4 h-4 shrink-0" />
+                  <span>
+                    {createdShare.emailStatusMessage ||
+                      (createdShare.emailSent === false
+                        ? 'Share link generated successfully, but the email could not be sent.'
+                        : `Share link generated and sent successfully to ${createdShare.recipientEmail}.`)}
+                  </span>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="text-xs text-slate-400 font-mono">Share Link</label>
