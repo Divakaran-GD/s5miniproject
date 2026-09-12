@@ -3,32 +3,32 @@ package com.securex;
 import com.securex.service.EmailServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
 
 import java.time.LocalDateTime;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-@ExtendWith(MockitoExtension.class)
 public class EmailServiceTest {
 
-    @Mock
-    private JavaMailSender mailSender;
-
+    private RestClient.Builder restClientBuilder;
+    private MockRestServiceServer mockServer;
     private EmailServiceImpl emailService;
 
     @BeforeEach
     void setUp() {
-        emailService = new EmailServiceImpl(mailSender);
-        ReflectionTestUtils.setField(emailService, "mailFrom", "noreply@securex.com");
-        ReflectionTestUtils.setField(emailService, "mailHost", "smtp.example.com");
+        restClientBuilder = RestClient.builder();
+        mockServer = MockRestServiceServer.bindTo(restClientBuilder).build();
+        emailService = new EmailServiceImpl(restClientBuilder.build());
+        ReflectionTestUtils.setField(emailService, "resendApiKey", "re_test_key_123");
+        ReflectionTestUtils.setField(emailService, "mailFrom", "onboarding@resend.dev");
     }
 
     @Test
@@ -39,22 +39,24 @@ public class EmailServiceTest {
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(1);
         Integer maxDownloads = 3;
 
+        mockServer.expect(requestTo("https://api.resend.com/emails"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer re_test_key_123"))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.to[0]").value(recipient))
+                .andExpect(jsonPath("$.from").value("onboarding@resend.dev"))
+                .andExpect(jsonPath("$.subject").value("Secure File Shared: report.pdf"))
+                .andExpect(jsonPath("$.text").value(containsString(shareUrl)))
+                .andRespond(withSuccess("{\"id\": \"msg_123\"}", MediaType.APPLICATION_JSON));
+
         emailService.sendShareLinkEmail(recipient, fileName, shareUrl, expiresAt, maxDownloads);
 
-        ArgumentCaptor<SimpleMailMessage> captor = ArgumentCaptor.forClass(SimpleMailMessage.class);
-        verify(mailSender, times(1)).send(captor.capture());
-
-        SimpleMailMessage message = captor.getValue();
-        assertEquals("noreply@securex.com", message.getFrom());
-        assertArrayEquals(new String[]{recipient}, message.getTo());
-        assertEquals("Secure File Shared: report.pdf", message.getSubject());
-        assertTrue(message.getText().contains(shareUrl));
-        assertTrue(message.getText().contains("Your secure file has been shared with you."));
+        mockServer.verify();
     }
 
     @Test
-    void testSendShareLinkEmail_MissingHost_ThrowsException() {
-        ReflectionTestUtils.setField(emailService, "mailHost", "");
+    void testSendShareLinkEmail_MissingApiKey_ThrowsException() {
+        ReflectionTestUtils.setField(emailService, "resendApiKey", "");
 
         assertThrows(IllegalStateException.class, () ->
                 emailService.sendShareLinkEmail("recipient@example.com", "file.pdf", "https://app.com/share/123", LocalDateTime.now(), 1)

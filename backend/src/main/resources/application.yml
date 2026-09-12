@@ -33,24 +33,10 @@ spring:
     multipart:
       max-file-size: 100MB
       max-request-size: 100MB
-  mail:
-    host: ${MAIL_HOST:}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      mail:
-        smtp:
-          auth: ${MAIL_SMTP_AUTH:true}
-          starttls:
-            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
-            required: ${MAIL_SMTP_STARTTLS_REQUIRED:false}
-          timeout: ${MAIL_SMTP_TIMEOUT:5000}
-          connectiontimeout: ${MAIL_SMTP_CONNECTIONTIMEOUT:5000}
-
 securex:
   mail:
-    from: ${MAIL_FROM:noreply@securex.com}
+    resend-api-key: ${RESEND_API_KEY:${EMAIL_API_KEY:}}
+    from: ${MAIL_FROM:${RESEND_FROM_EMAIL:onboarding@resend.dev}}
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     expiration-ms: 86400000 # 24 hours
