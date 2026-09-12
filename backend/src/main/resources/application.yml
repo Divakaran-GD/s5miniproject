@@ -36,7 +36,7 @@ spring:
 securex:
   mail:
     resend-api-key: ${RESEND_API_KEY:${EMAIL_API_KEY:}}
-    from: ${MAIL_FROM:${RESEND_FROM_EMAIL:onboarding@resend.dev}}
+    from: ${MAIL_FROM:${RESEND_FROM_EMAIL:demonking14141414@gmail.com}}
   jwt:
     secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
     expiration-ms: 86400000 # 24 hours
